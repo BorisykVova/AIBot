@@ -2,3 +2,4 @@ nltk~=3.5
 numpy~=1.19.4
 requests~=2.25.0
 beautifulsoup4~=4.9.3
+python-telegram-bot~=13.1
