@@ -34,7 +34,7 @@ def change_topic(update: Update, context: CallbackContext):
     update.message.reply_text(f'Topic has been changed to {topic!r}')
     return ConversationHandler.END
 
-def cancel(update: Update, _):
+def cancel(update: Update, context: CallbackContext):
     update.message.reply_text('Good bye')
     return ConversationHandler.END
 
