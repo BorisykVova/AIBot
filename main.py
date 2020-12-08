@@ -45,7 +45,7 @@ updater = Updater(TOKEN)
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('change_topic', start_change_topic)],
     states={
-        CHANGE_TOPIC: [MessageHandler(Filters.text, change_topic)]
+        CHANGE_TOPIC: [CommandHandler('cancel', cancel), MessageHandler(Filters.text, change_topic)]
     },
     fallbacks=[CommandHandler('cancel', cancel)]
 )
