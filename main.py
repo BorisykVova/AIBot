@@ -12,22 +12,22 @@ DEFAULT_TOPIC = 'Tennis'
 users_topics = {}
 
 
-def hello(update: Update, _) -> None:
+def hello(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f'Hello {update.effective_user.first_name}')
 
 
-def get_bot_response(update: Update, CallbackContext) -> None:
+def get_bot_response(update: Update, context: CallbackContext) -> None:
     bot = users_topics.get(update.effective_user, AIBot(DEFAULT_TOPIC))
     user_input = update.message.text
     update.message.reply_text(bot.generate_response(user_input))
 
 
-def start_change_topic(update: Update, CallbackContext):
+def start_change_topic(update: Update, context: CallbackContext):
     update.message.reply_text('Enter new topic:')
     return CHANGE_TOPIC
 
 
-def change_topic(update: Update, CallbackContext):
+def change_topic(update: Update, context: CallbackContext):
     user = update.effective_user
     topic = update.message.text
     users_topics[user] = AIBot(topic)
