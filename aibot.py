@@ -8,6 +8,8 @@ import bs4 as bs
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+import logger
+
 
 class AIBot:
 
@@ -21,7 +23,7 @@ class AIBot:
 
     def __init__(self, subject: str):
         self.subject = subject
-
+        self.log = logger.get_logger('AIBot')
         self.wnlemmatizer = nltk.stem.WordNetLemmatizer()
 
     def run_bot(self):
@@ -33,7 +35,17 @@ class AIBot:
             print(f'Answer: {self.generate_response(user_input)}')
 
     def fetch_wiki_text(self) -> str:
-        response = requests.get(f'{self.WIKI_API}/{self.subject}')
+        url = f'{self.WIKI_API}/{self.subject}'
+
+        self.log.debug(f'Sending request to {url}.')
+
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            self.log.debug(f'Got successful response: {response}.')
+        else:
+            self.log.warning(f'Got bad response: {response}.')
+
         raw_html = response.text
 
         article_html = bs.BeautifulSoup(raw_html, 'html.parser')
@@ -55,6 +67,7 @@ class AIBot:
         return article_sentence, article_words
 
     def generate_response(self, user_input: str) -> str:
+        self.log.debug(f'Generating response for {user_input!r}.')
         article_text = self.fetch_wiki_text()
         article_sentence, article_words = self.split_text(article_text)
 
@@ -74,8 +87,10 @@ class AIBot:
         vector_matched = matched_vector[-2]
 
         if vector_matched == 0:
+            self.log.warning(f'Failed generate response')
             return "I'm sorry, I could not understand you."
         else:
+            self.log.debug('Successfully generated response.')
             return article_sentence[similar_sentence_number]
 
     def _perform_lemmatization(self, tokens: Iterable[str]) -> List[str]:
