@@ -1,21 +1,16 @@
 from telegram import Update
-from telegram.ext.filters import Filters
 from telegram.ext import (Updater, CommandHandler, CallbackContext,
                           MessageHandler, ConversationHandler)
+from telegram.ext.filters import Filters
 
 import user_crud
 from aibot import AIBot
-from models import User
-from settings import DEFAULT_TOPIC, TOKEN
-
+from settings import TOKEN
 
 CHANGE_TOPIC = 1
 
-users_topics = {}
-
 
 def hello(update: Update, context: CallbackContext) -> None:
-    print(update.effective_user.id)
     update.message.reply_text(f'Hello {update.effective_user.first_name}')
 
 

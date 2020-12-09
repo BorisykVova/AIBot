@@ -22,6 +22,6 @@ def get_or_create(user_id: int, topic: str = DEFAULT_TOPIC) -> User:
 
 @orm.db_session
 def update(user_id: int, topic: str) -> User:
-    user = User[user_id]
+    user = get(user_id)
     user.current_topic = topic
     return user
