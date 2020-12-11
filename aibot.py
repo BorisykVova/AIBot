@@ -1,10 +1,12 @@
 import re
 import string
-from typing import List, Tuple, Iterable
+from operator import itemgetter
+from typing import List, Tuple, Iterable, Generator
 
 import nltk
 import requests
 import bs4 as bs
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -12,7 +14,7 @@ import logger
 
 
 class AIBot:
-
+    SENTENCE_THRESHOLD = 0.1
     WIKI_API = 'https://en.wikipedia.org/wiki'
     STOP_WORDS = {'stop'}
 
@@ -68,6 +70,7 @@ class AIBot:
 
     def generate_response(self, user_input: str) -> str:
         self.log.debug(f'Generating response for {user_input!r}.')
+
         article_text = self.fetch_wiki_text()
         article_sentence, article_words = self.split_text(article_text)
 
@@ -79,19 +82,18 @@ class AIBot:
         )
 
         all_word_vectors = word_vectorizer.fit_transform(sentences)
-        similarly_vector_values = cosine_similarity(all_word_vectors[-1], all_word_vectors)
-        similar_sentence_number = similarly_vector_values.argsort()[0][-2]
+        similarly_vector: np.ndarray = cosine_similarity(all_word_vectors[-1], all_word_vectors).flatten()
 
-        matched_vector = similarly_vector_values.flatten()
-        matched_vector.sort()
-        vector_matched = matched_vector[-2]
+        matched_vectors = list(self._filter_sentences(similarly_vector))[:5]
 
-        if vector_matched == 0:
-            self.log.warning(f'Failed generate response')
-            return "I'm sorry, I could not understand you."
+        if matched_vectors:
+            response = '. '.join(article_sentence[index].capitalize() for index, _ in matched_vectors)
+            self.log.debug(f'Successfully generated response. Found {len(matched_vectors)} for response.')
         else:
-            self.log.debug('Successfully generated response.')
-            return article_sentence[similar_sentence_number]
+            response = "I'm sorry ☹️, I don't know it 🤦🏼‍♂."
+            self.log.warning(f'Not found any similar sentences.')
+
+        return response
 
     def _perform_lemmatization(self, tokens: Iterable[str]) -> List[str]:
         return [self.wnlemmatizer.lemmatize(token) for token in tokens]
@@ -100,6 +102,12 @@ class AIBot:
         return self._perform_lemmatization(
             nltk.word_tokenize(document.lower().translate(self.punctuation_removal))
         )
+
+    def _filter_sentences(self, similarly_vector: np.ndarray) -> Generator[Tuple[int, float], None, None]:
+        similarly_vector_indexed = sorted(enumerate(similarly_vector), key=itemgetter(1), reverse=True)
+        for index, similarity in similarly_vector_indexed[1:]:
+            if similarity >= self.SENTENCE_THRESHOLD:
+                yield index, similarity
 
 
 if __name__ == '__main__':
