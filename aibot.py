@@ -16,6 +16,7 @@ import logger
 
 class AIBot:
     SENTENCE_THRESHOLD = 0.1
+    MATCHED_LIMIT = 5
     WIKI_API = 'https://en.wikipedia.org/wiki'
     STOP_WORDS = {'stop'}
 
@@ -96,7 +97,7 @@ class AIBot:
         all_word_vectors = word_vectorizer.fit_transform(sentences)
         similarly_vector: np.ndarray = cosine_similarity(all_word_vectors[-1], all_word_vectors).flatten()
 
-        matched_vectors = list(self._filter_sentences(similarly_vector))[:5]
+        matched_vectors = list(self._filter_sentences(similarly_vector))[:self.MATCHED_LIMIT]
 
         if matched_vectors:
             response = ' '.join(self._remove_tag(article_sentence[index]) for index, _ in matched_vectors)
