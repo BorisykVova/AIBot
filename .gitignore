@@ -6,3 +6,6 @@
 
 # DB
 sqlite.db
+
+# configs
+config.yaml
