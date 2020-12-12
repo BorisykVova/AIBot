@@ -95,7 +95,7 @@ updater.dispatcher.add_handler(MessageHandler(Filters.text, get_bot_response))
 if __name__ == '__main__':
     logger.logger_configure(level='DEBUG', root_level='WARNING')
 
-    log.info('Bot has been stated...\n Press Ctr+C to STOP the bot.')
+    log.info('Bot has been started...\n Press Ctr+C to STOP the bot.')
     updater.start_polling()
     updater.idle()
     log.info('Bot has been stopped.')

@@ -7,6 +7,7 @@ import nltk
 import requests
 import bs4 as bs
 import numpy as np
+from bs4.element import Tag
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -51,14 +52,25 @@ class AIBot:
         raw_html = response.text
 
         article_html = bs.BeautifulSoup(raw_html, 'html.parser')
-        article_paragraphs = article_html.find_all('p')
+        article_paragraphs = article_html.select('h2, p')
 
-        article_text = ''.join(p.text for p in article_paragraphs).lower()
+        # add content tags
+        article_text = ''
+        current_header = ''
+        for tag in article_paragraphs:  # type: Tag
+            if tag.name == 'h2':
+                current_header = self._remove_tag(tag.text)
+            else:
+                sentences, _ = self.split_text(tag.text)
+                article_text += ''.join(f'[{current_header}] {sentence}' for sentence in sentences)
+
         return article_text
 
     @staticmethod
     def split_text(article_text: str) -> Tuple[List[str], List[str]]:
+        article_text = article_text.lower()
         article_text = re.sub(r'\[[0-9]*\]', ' ', article_text)
+        article_text = re.sub(r'\n', ' ', article_text)
         article_text = re.sub(r'\s+', ' ', article_text)
 
         # Divide to sentence
@@ -87,7 +99,7 @@ class AIBot:
         matched_vectors = list(self._filter_sentences(similarly_vector))[:5]
 
         if matched_vectors:
-            response = '. '.join(article_sentence[index].capitalize() for index, _ in matched_vectors)
+            response = ' '.join(self._remove_tag(article_sentence[index]) for index, _ in matched_vectors)
             self.log.debug(f'Successfully generated response. Found {len(matched_vectors)} for response.')
         else:
             response = "I'm sorry ☹️, I don't know it 🤦🏼‍♂."
@@ -108,6 +120,12 @@ class AIBot:
         for index, similarity in similarly_vector_indexed[1:]:
             if similarity >= self.SENTENCE_THRESHOLD:
                 yield index, similarity
+
+    @staticmethod
+    def _remove_tag(text: str) -> str:
+        text = re.sub('\[[a-z -]*\]', '', text)
+        text = text.strip(' \'"')
+        return text.capitalize()
 
 
 if __name__ == '__main__':
