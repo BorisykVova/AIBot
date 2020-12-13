@@ -1,9 +1,9 @@
 from pony import orm
 
-from settings import SQL_LITE_SETTINGS, DEFAULT_TOPIC
+from settings import MYSQL_SETTINGS, DEFAULT_TOPIC
 
 
-db = orm.Database(**SQL_LITE_SETTINGS)
+db = orm.Database(**MYSQL_SETTINGS)
 
 
 class User(db.Entity):
