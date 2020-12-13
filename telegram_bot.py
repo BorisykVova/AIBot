@@ -1,5 +1,6 @@
 import random
 
+import nltk
 from telegram import Update
 from telegram.ext import (Updater, CommandHandler, CallbackContext,
                           MessageHandler, ConversationHandler)
@@ -73,6 +74,11 @@ def get_topic(update: Update, context: CallbackContext):
     log.debug(f'User {update.effective_user.first_name!r} got current topic.')
 
 
+def download_nltk_resources():
+    nltk.download('punkt')
+    nltk.download('wordnet')
+
+
 updater = Updater(TOKEN)
 
 
@@ -93,6 +99,7 @@ updater.dispatcher.add_handler(MessageHandler(Filters.text, get_bot_response))
 
 
 if __name__ == '__main__':
+    download_nltk_resources()
     logger.logger_configure(level='DEBUG', root_level='WARNING')
 
     log.info('Bot has been started...\n Press Ctr+C to STOP the bot.')
