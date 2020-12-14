@@ -2,13 +2,20 @@ import random
 
 import nltk
 from telegram import Update
-from telegram.ext import (Updater, CommandHandler, CallbackContext,
-                          MessageHandler, ConversationHandler)
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    CallbackContext,
+    MessageHandler,
+    ConversationHandler,
+)
 from telegram.ext.filters import Filters
 
+import keyboards
 import logger
 import user_crud
 from aibot import AIBot
+from patterns import ButtonPattern
 from settings import TOKEN
 
 CHANGE_TOPIC = 1
@@ -34,7 +41,9 @@ def hello(update: Update, context: CallbackContext) -> None:
     user_name = update.effective_user.first_name
     log.debug(f"User {user_name} sent command '/hello'.")
     update.message.reply_text(f'Hello {user_name}. I can answer to your question.\n'
-                              f'Use command /change_topic to change topic. For example: tennis, economics, music ...')
+                              f'Use command /change_topic to change topic.'
+                              f' For example: tennis, economics, music ...',
+                              reply_markup=keyboards.keyboard)
 
 
 def get_bot_response(update: Update, context: CallbackContext) -> None:
@@ -51,7 +60,10 @@ def get_bot_response(update: Update, context: CallbackContext) -> None:
 
 
 def start_change_topic(update: Update, context: CallbackContext):
-    update.message.reply_text('About what do you want to talk?')
+    update.message.reply_text(
+        'About what do you want to talk?',
+        reply_markup=keyboards.keyboard_only_cancel
+    )
     return CHANGE_TOPIC
 
 
@@ -59,14 +71,22 @@ def change_topic(update: Update, context: CallbackContext):
     topic = update.message.text
     user = user_crud.get_or_create(update.effective_user.id, topic)
     user_updated = user_crud.update(user.id, topic)
-    update.message.reply_text(f'Ok, lets talk about {user_updated.current_topic!r}')
+    update.message.reply_text(
+        f'Ok, lets talk about {user_updated.current_topic!r}',
+        reply_markup=keyboards.keyboard,
+    )
     log.debug(f'User {update.effective_user.first_name!r} changed topic to : {user_updated.current_topic!r}.')
     return ConversationHandler.END
 
+
 def cancel(update: Update, context: CallbackContext):
-    update.message.reply_text('Good bye')
+    update.message.reply_text(
+        'No problem',
+         reply_markup=keyboards.keyboard,
+    )
     log.debug(f'User {update.effective_user.first_name!r} canceled an action.')
     return ConversationHandler.END
+
 
 def get_topic(update: Update, context: CallbackContext):
     user = user_crud.get_or_create(update.effective_user.id)
@@ -83,17 +103,30 @@ updater = Updater(TOKEN)
 
 
 conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('change_topic', start_change_topic)],
+    entry_points=[
+        CommandHandler('change_topic', start_change_topic),
+        MessageHandler(Filters.regex(ButtonPattern.CHANGE.value), start_change_topic)
+    ],
     states={
-        CHANGE_TOPIC: [CommandHandler('cancel', cancel), MessageHandler(Filters.text, change_topic)]
+        CHANGE_TOPIC: [
+            CommandHandler('cancel', cancel),
+            MessageHandler(Filters.regex(ButtonPattern.CANCEL.value), cancel),
+            MessageHandler(Filters.text, change_topic),
+        ]
     },
-    fallbacks=[CommandHandler('cancel', cancel)]
+    fallbacks=[
+        CommandHandler('cancel', cancel),
+        MessageHandler(Filters.regex(ButtonPattern.CANCEL.value), cancel),
+    ]
 )
-
 
 updater.dispatcher.add_handler(CommandHandler('hello', hello))
 updater.dispatcher.add_handler(CommandHandler('start', hello))
 updater.dispatcher.add_handler(CommandHandler('topic', get_topic))
+
+updater.dispatcher.add_handler(MessageHandler(Filters.regex(ButtonPattern.HELLO.value), hello))
+updater.dispatcher.add_handler(MessageHandler(Filters.regex(ButtonPattern.TOPIC.value), get_topic))
+
 updater.dispatcher.add_handler(conv_handler)
 updater.dispatcher.add_handler(MessageHandler(Filters.text, get_bot_response))
 
