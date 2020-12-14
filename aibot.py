@@ -100,7 +100,7 @@ class AIBot:
         matched_vectors = list(self._filter_sentences(similarly_vector))[:self.MATCHED_LIMIT]
 
         if matched_vectors:
-            response = ' '.join(self._remove_tag(article_sentence[index]) for index, _ in matched_vectors)
+            response = ' '.join(self._remove_tag(sentences[index]) for index, _ in matched_vectors)
             self.log.debug(f'Successfully generated response. Found {len(matched_vectors)} for response.')
         else:
             response = "I'm sorry ☹️, I don't know it 🤦🏼‍♂."
